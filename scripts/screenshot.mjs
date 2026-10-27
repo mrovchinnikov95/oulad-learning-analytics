@@ -35,7 +35,8 @@ const url = `http://127.0.0.1:${server.address().port}/index.html`;
 const problems = [];
 const browser = await chromium.launch();
 try {
-  for (const [scheme, width, out] of [["light", 1280, join(DOCS, "dashboard.png")], ["dark", 1280, join(TMP, "dashboard-dark.png")], ["light", 390, join(TMP, "dashboard-phone.png")]]) {
+  for (const [scheme, width, out] of [["light", 1280, join(DOCS, "dashboard.png")], ["dark", 1280, join(TMP, "dashboard-dark.png")],
+                                    ["light", 390, join(TMP, "dashboard-phone.png")], ["light", 768, join(TMP, "dashboard-tablet.png")]]) {
     const tag = `${scheme} ${width}px`;
     const page = await browser.newPage({ viewport: { width, height: 900 }, deviceScaleFactor: 2, colorScheme: scheme });
     page.on("console", (msg) => {
@@ -54,6 +55,12 @@ try {
     // Горизонтальной прокрутки страницы быть не должно (широкие графики прокручиваются внутри карточек).
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     if (overflow > 0) problems.push(`${tag}: страница шире окна на ${overflow}px`);
+    // И внутри карточек: карточка не должна прокручиваться вбок (иначе на телефоне график обрезан).
+    // Мерить нужно карточку: vega-embed растягивает сам контейнер графика под ширину SVG.
+    // Широкие таблицы прокручиваются внутри своей обёртки .table-wrap, это не считается.
+    const clipped = await page.$$eval(".card", (els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1)
+      .map((e) => `${e.getAttribute("aria-labelledby")} +${e.scrollWidth - e.clientWidth}px`));
+    if (clipped.length) problems.push(`${tag}: графики шире карточек: ${clipped.join(", ")}`);
     const tiles = await page.$$eval("#kpi .tile", (els) => els.length);
     if (tiles !== 6) problems.push(`${tag}: плиток ${tiles}, ожидалось 6`);
     await page.screenshot({ path: out, fullPage: true });

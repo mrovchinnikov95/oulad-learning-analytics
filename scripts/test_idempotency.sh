@@ -8,21 +8,21 @@ T=.tmp/idempotency
 rm -rf "$T"; mkdir -p "$T"
 
 objects() {  # своя метка в выводе, а не текст сообщений сервера
-    "${PSQL[@]}" -tA -c "SELECT 'fp|' || n.nspname || '|' || c.relkind || '|' || count(*)
+    "${PSQL[@]}" -tA -c "SELECT 'fp|' || n.nspname || '|' || c.relkind::text || '|' || count(*)
         FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname IN ('raw', 'rules', 'clean', 'mart', 'qa') GROUP BY 1 ORDER BY 1" \
+        WHERE n.nspname IN ('raw', 'rules', 'clean', 'mart', 'qa') GROUP BY n.nspname, c.relkind ORDER BY 1" \
         -c "SELECT 'fp|' || n.nspname || '|function|' || count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-        WHERE n.nspname IN ('raw', 'rules', 'clean', 'mart', 'qa') GROUP BY 1 ORDER BY 1" | grep '^fp|'
+        WHERE n.nspname IN ('raw', 'rules', 'clean', 'mart', 'qa') GROUP BY n.nspname ORDER BY 1" | grep '^fp|'
 }
 
 for run in 1 2; do
     echo "→ сборка $run"
-    OUT_DIR="$T/run$run" STUDENTS_CSV="$T/run$run/student_presentation.csv" scripts/build.sh > "$T/build$run.log" 2>&1 \
+    OUT_DIR="$T/run$run" STUDENTS_CSV="$T/run$run/student_presentation.csv" LOG_DIR="$T/logs$run" scripts/build.sh > "$T/build$run.log" 2>&1 \
         || { cat "$T/build$run.log"; exit 1; }
     objects > "$T/objects$run.txt"
 done
 
-n=$(wc -l < "$T/objects1.txt")
+n=$(wc -l < "$T/objects1.txt" | tr -d " ")
 [ "$n" -ge 10 ] || { echo "отпечаток объектов не работает: строк $n"; exit 1; }
 diff "$T/objects1.txt" "$T/objects2.txt" >/dev/null || { echo "число объектов изменилось:"; diff "$T/objects1.txt" "$T/objects2.txt"; exit 1; }
 echo "  объекты в схемах после двух сборок совпадают ($n строк отпечатка)"

@@ -3,12 +3,14 @@
 # clean → витрины → качество данных → факты → проверки витрин → выгрузка JSON для дашборда.
 # Любая непрошедшая проверка останавливает сборку, и выгрузка не перезаписывается.
 # DATA_DIR — каталог с CSV (по умолчанию data/raw); SKIP_SHA=1 — не сверять суммы (для тестов порчи);
-# OUT_DIR — куда выгружать JSON (по умолчанию dashboard/data).
+# OUT_DIR — куда выгружать JSON (по умолчанию dashboard/data); LOG_DIR — куда писать логи проверок
+# (по умолчанию .tmp; тесты пишут в свои каталоги, чтобы не затирать логи рабочей сборки).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/env.sh
 DATA_DIR="$(cd "${DATA_DIR:-data/raw}" && pwd)"
-mkdir -p .tmp
+LOG_DIR="${LOG_DIR:-.tmp}"
+mkdir -p "$LOG_DIR"
 
 # GNU sha256sum (Linux) или shasum (macOS: системный sha256sum не знает --quiet).
 sha_check() { if sha256sum --version 2>/dev/null | grep -q GNU; then sha256sum --check --quiet; else shasum -a 256 --check --quiet; fi; }
@@ -20,7 +22,7 @@ fi
 
 run() { echo "→ $1"; "${PSQL[@]}" -q -v data_dir="$DATA_DIR" -f "$1"; }
 gate() {  # проверки: печатаем итог, при падении — весь отчёт
-    local log=".tmp/$(basename "$1" .sql).log"
+    local log="$LOG_DIR/$(basename "$1" .sql).log"
     echo "→ $1"
     "${PSQL[@]}" -q -f "$1" > "$log" 2>&1 || { cat "$log"; exit 1; }
     grep -E "^ Проверок" "$log" | sed 's/^ */  /'

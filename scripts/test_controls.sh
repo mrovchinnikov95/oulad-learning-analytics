@@ -87,7 +87,7 @@ fi
 # 2. Изменённый файл: контрольная сумма останавливает сборку до загрузки.
 rm "$T/bad_sha/courses.csv"
 sed 's/^"AAA","2013J","268"/"AAA","2013J","267"/' data/raw/courses.csv > "$T/bad_sha/courses.csv"
-if PGDATABASE=$TEST_DB DATA_DIR="$T/bad_sha" OUT_DIR="$T/out" scripts/build.sh > "$T/sha.log" 2>&1; then
+if PGDATABASE=$TEST_DB DATA_DIR="$T/bad_sha" OUT_DIR="$T/out" LOG_DIR="$T" scripts/build.sh > "$T/sha.log" 2>&1; then
     echo "  НЕ ПОЙМАНО: сборка прошла на файле с другой контрольной суммой"; failed=$((failed + 1))
 elif grep -q "courses.csv: FAILED" "$T/sha.log" && ! grep -q "sql/00_schemas.sql" "$T/sha.log"; then
     echo "  ok: изменённый courses.csv → сборка остановлена на сверке сумм, до загрузки"; passed=$((passed + 1))
@@ -99,7 +99,7 @@ fi
 rm "$T/bad_score/studentAssessment.csv"
 awk 'NR == 2 { sub(/,"78"/, ",\"178\"") } { print }' data/raw/studentAssessment.csv > "$T/bad_score/studentAssessment.csv"
 echo "sentinel" > "$T/out/presentation_outcome.json"
-if PGDATABASE=$TEST_DB SKIP_SHA=1 DATA_DIR="$T/bad_score" OUT_DIR="$T/out" STUDENTS_CSV="$T/out/students.csv" \
+if PGDATABASE=$TEST_DB SKIP_SHA=1 DATA_DIR="$T/bad_score" OUT_DIR="$T/out" STUDENTS_CSV="$T/out/students.csv" LOG_DIR="$T" \
         scripts/build.sh > "$T/score.log" 2>&1; then
     echo "  НЕ ПОЙМАНО: сборка прошла с оценкой 178"; failed=$((failed + 1))
 elif grep -F "| FAIL |" "$T/score.log" | grep -qF "score вне 0–100" && [ "$(cat "$T/out/presentation_outcome.json")" = "sentinel" ] \

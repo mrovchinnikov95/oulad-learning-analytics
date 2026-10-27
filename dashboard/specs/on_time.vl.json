@@ -1,13 +1,6 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-  "description": "Доля сданных в срок среди сданных заданий TMA по потокам. Источник: mart.presentation_outcome (tma_on_time_share).",
-  "title": {
-    "text": "Сдача в срок, задания TMA",
-    "subtitle": [
-      "Доля сданных в день срока или раньше среди сданных",
-      "CMA не входят: см. «Качество данных», код cma_deadline"
-    ]
-  },
+  "description": "Доля заданий TMA, сданных в день срока или раньше, среди сданных, по потокам.",
   "data": {
     "url": "data/presentation_outcome.json"
   },
@@ -23,7 +16,7 @@
   },
   "mark": {
     "type": "bar",
-    "color": "token:series1",
+    "color": "token:muted",
     "height": {
       "band": 0.6
     },

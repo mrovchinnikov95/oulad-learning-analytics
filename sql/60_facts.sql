@@ -1,6 +1,7 @@
 -- Факты для README и плиток дашборда. Каждое число в выводах README берётся отсюда (колонка display):
--- checks/check_readme_numbers.py не пропускает в тексте чисел, которых здесь нет, а
--- checks/verify_independent.py пересчитывает value заново из CSV. Определения — docs/spec.md, раздел «Факты».
+-- checks/check_readme_numbers.py не пропускает в проверяемых блоках README чисел, которых нет среди подписей
+-- (место числа в тексте он не проверяет), а checks/verify_independent.py пересчитывает value заново из CSV.
+-- Определения — docs/spec.md, раздел про readme_facts.json.
 
 -- Форматирование только для подписей: в расчётах значения не округляются.
 -- Тысячи отделяются неразрывным пробелом с 10 000 (четырёхзначные числа без пробела).
@@ -68,7 +69,7 @@ cma AS (
            count(*) FILTER (WHERE on_time)   AS on_time
     FROM mart.expected_submission WHERE assessment_type = 'CMA' GROUP BY code_module
 ),
-cma_low AS (SELECT * FROM cma WHERE on_time < 0.01 * submitted),
+cma_low AS (SELECT * FROM cma WHERE rules.cma_deadline_unreliable(on_time, submitted)),
 w12 AS (
     SELECT outcome_group, sum(enrolled) AS enrolled, sum(active)::numeric / sum(enrolled) AS active_share
     FROM mart.cohort_week_activity WHERE week = 12 GROUP BY outcome_group

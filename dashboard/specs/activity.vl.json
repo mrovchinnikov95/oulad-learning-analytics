@@ -1,13 +1,6 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-  "description": "Доля студентов когорты недели, у которых был хотя бы один клик в VLE за неделю, по группам итога. Источник: mart.cohort_week_activity.",
-  "title": {
-    "text": "Активность когорт по неделям",
-    "subtitle": [
-      "Доля числящихся на курсе, кто хоть раз зашёл в VLE за неделю",
-      "«Все потоки» — недели, которые есть у всех 22 потоков (самый короткий — 34 недели); точки, где в группе меньше 30 человек, скрыты"
-    ]
-  },
+  "description": "Доля числящихся на курсе студентов, у которых был хотя бы один клик в VLE за неделю, по группам итога курса.",
   "data": {
     "url": "data/cohort_week_activity.json"
   },
@@ -28,6 +21,21 @@
     {
       "calculate": "datum.code_module + ' ' + datum.code_presentation",
       "as": "presentation"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "week",
+          "as": "flow_last_week"
+        }
+      ],
+      "groupby": [
+        "presentation"
+      ]
+    },
+    {
+      "filter": "datum.week < datum.flow_last_week"
     },
     {
       "filter": "flow == 'все потоки' || datum.presentation == flow"
@@ -147,7 +155,8 @@
     {
       "mark": {
         "type": "line",
-        "strokeWidth": 2
+        "strokeWidth": 2,
+        "aria": true
       }
     },
     {
@@ -156,7 +165,8 @@
         "align": "left",
         "dx": 6,
         "fontSize": 11,
-        "color": "token:ink2"
+        "color": "token:ink2",
+        "aria": false
       },
       "transform": [
         {
@@ -166,6 +176,9 @@
       "encoding": {
         "text": {
           "field": "group"
+        },
+        "color": {
+          "value": "token:ink2"
         }
       }
     },
@@ -187,7 +200,8 @@
       "mark": {
         "type": "rule",
         "color": "token:muted",
-        "strokeWidth": 1
+        "strokeWidth": 1,
+        "aria": false
       },
       "encoding": {
         "opacity": {
@@ -222,7 +236,10 @@
             "title": "Числятся",
             "format": ",d"
           }
-        ]
+        ],
+        "color": {
+          "value": "token:muted"
+        }
       }
     },
     {
@@ -231,7 +248,8 @@
         "filled": true,
         "size": 70,
         "stroke": "token:surface",
-        "strokeWidth": 2
+        "strokeWidth": 2,
+        "aria": false
       },
       "encoding": {
         "opacity": {

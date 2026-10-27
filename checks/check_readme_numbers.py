@@ -26,8 +26,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 NBSP = " "
-# Параметры определений, а не результаты: номер недели в фактах week12_* и годы набора.
-PARAMETERS = {"12": "неделя фактов week12_*", "2013": "год набора", "2014": "год набора"}
+# Параметры определений, а не результаты: номера недель (неделя 0 и неделя фактов week12_*) и годы набора.
+PARAMETERS = {"0": "первая неделя курса, отсчёт с нуля", "12": "неделя фактов week12_*", "2013": "год набора", "2014": "год набора"}
 
 RU_NUMBER = re.compile(r"\d{1,3}(?:[  ]\d{3})+(?:,\d+)?|\d+(?:,\d+)?")
 EN_NUMBER = re.compile(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?")
@@ -86,6 +86,7 @@ def blocks(text, tag):
 
 def strip_noise(block):
     block = re.sub(r"(?m)^\s*\d+\.\s", " ", block)     # номера пунктов списка
+    block = re.sub(r"(?m)^\*\*\d+\.\s", "**", block)   # номера выводов «**1. …»
     block = re.sub(r"`[^`]*`", " ", block)            # идентификаторы и код
     block = re.sub(r"\]\([^)]*\)", "]", block)         # адреса ссылок
     block = re.sub(r"<!--.*?-->", " ", block, flags=re.S)
@@ -103,8 +104,11 @@ def tooling_numbers():
                                         (r"порч поймано: (\d+) из \1", "self_test")],
         ".tmp/test_controls.out": [(r"Порч поймано: (\d+) из \1", "controls")],
     }
+    missing = []
     for path, patterns in sources.items():
         p = ROOT / path
+        if not p.exists():
+            missing.append(path)
         text = p.read_text(encoding="utf-8") if p.exists() else ""
         for pattern, key in patterns:
             m = re.search(pattern, text)
@@ -114,7 +118,7 @@ def tooling_numbers():
         found["mismatches"] = "0"                      # лог совпал только при «расхождений: 0»
     if "raw_checks" in found and "mart_checks" in found:
         found["all_checks"] = str(int(found["raw_checks"]) + int(found["mart_checks"]))
-    return found
+    return found, missing
 
 
 def check(text, facts, quality, outcome):
@@ -151,11 +155,13 @@ def check(text, facts, quality, outcome):
             if canon(token) not in allowed:
                 problems.append(f"число «{token}» не найдено среди фактов и счётчиков качества данных")
 
-    tools = tooling_numbers()
+    tools, missing = tooling_numbers()
     tool_values = set(tools.values())
     tool_blocks = blocks(text, "checked-tooling")
     if not tool_blocks:
         problems.append("нет блока checked-tooling")
+    for path in missing:
+        problems.append(f"нет лога {path}: сначала make build, make test и scripts/check.sh (см. README, «Как запустить»)")
     for block in tool_blocks:
         for token in RU_NUMBER.findall(strip_noise(block)):
             numbers_seen += 1

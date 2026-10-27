@@ -22,7 +22,7 @@ SELECT row_number() OVER (ORDER BY ord), code, 'warning', n, unit, description, 
  (2, 'late_registration',
   (SELECT count(*) FROM clean.enrolment WHERE reg_day > 0), 'регистраций',
   'Регистрация после старта потока.',
-  'Задания и недели — только с дня регистрации (R2).'),
+  'Задания и недели — только со дня регистрации (R2).'),
  (3, 'withdrawn_no_unreg_day',
   (SELECT count(*) FROM clean.enrolment WHERE final_result = 'Withdrawn' AND unreg_day IS NULL), 'регистраций',
   'Итог Withdrawn, но даты отписки нет.',
@@ -65,8 +65,9 @@ SELECT row_number() OVER (ORDER BY ord), code, 'warning', n, unit, description, 
    WHERE x.assessment_type = 'CMA' AND x.submitted
      AND x.code_module IN (SELECT code_module FROM mart.expected_submission
                            WHERE assessment_type = 'CMA' AND submitted
-                           GROUP BY code_module HAVING count(*) FILTER (WHERE on_time) < 0.01 * count(*))), 'сдач',
-  'Сдачи CMA в модулях, где в срок приходит меньше 1% CMA (BBB, CCC, DDD: в срок 2 сдачи, обе за месяцы до срока).',
+                           GROUP BY code_module
+                           HAVING rules.cma_deadline_unreliable(count(*) FILTER (WHERE on_time), count(*)))), 'сдач',
+  'Сдачи CMA в модулях, где в срок приходит меньше 1% CMA (BBB, CCC, DDD): почти все — через 2–3 дня после срока, в срок 2 сдачи, обе раньше срока на 27 и 141 день.',
   'Доля «в срок» считается только по TMA (R7); сдача CMA в доли сдачи входит.'),
  (12, 'vle_repeated_key',
   (SELECT sum(log_rows) - count(*) FROM (
@@ -94,6 +95,6 @@ SELECT row_number() OVER (ORDER BY ord), code, 'warning', n, unit, description, 
    WHERE NOT EXISTS (SELECT 1 FROM clean.vle_day d
                      WHERE (d.code_module, d.code_presentation, d.id_student) = (e.code_module, e.code_presentation, e.id_student))), 'регистраций',
   'Ни одного клика в VLE за всё время.',
-  'Остаются в знаменателях: неактивность — тоже результат.')
+  'Большинство из них отписались до старта и в поток не входят (R1); приступившие без кликов остаются в знаменателях.')
 ) AS x (ord, code, n, unit, description, handling);
 COMMIT;

@@ -1,10 +1,6 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-  "description": "Доля сдавших в февральском и октябрьском потоке одного модуля и одного года. Источник: mart.presentation_outcome.",
-  "title": {
-    "text": "Февральский поток против октябрьского",
-    "subtitle": "Доля сдавших среди приступивших; пары одного модуля и года"
-  },
+  "description": "Доля сдавших курс в февральском и октябрьском потоке одного модуля и одного года.",
   "data": {
     "url": "data/presentation_outcome.json"
   },
@@ -53,8 +49,9 @@
     {
       "mark": {
         "type": "rule",
-        "color": "token:baseline",
-        "strokeWidth": 2
+        "color": "token:muted",
+        "strokeWidth": 2,
+        "aria": false
       },
       "encoding": {
         "x": {

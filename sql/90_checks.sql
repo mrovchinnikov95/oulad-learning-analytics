@@ -153,21 +153,24 @@ FROM (
 ) t;
 
 -- Итоги приступивших по каждому final_result — напрямую из регистраций, мимо витрины студентов.
+-- Число сопоставленных итогов входит в проверку: пустое соединение не должно пройти.
 INSERT INTO chk (check_name, bad, note)
-SELECT 'сверка: приступившие с итогом ' || r, abs(m - d), format('%s против %s', m, d)
-FROM (
+WITH m AS (
     SELECT 'Distinction' AS r, (SELECT sum(started_distinction) FROM mart.presentation_outcome) AS m
     UNION ALL SELECT 'Pass', (SELECT sum(started_pass) FROM mart.presentation_outcome)
     UNION ALL SELECT 'Fail', (SELECT sum(started_fail) FROM mart.presentation_outcome)
     UNION ALL SELECT 'Withdrawn', (SELECT sum(started_withdrawn) FROM mart.presentation_outcome)
-) m
-JOIN (
+), d AS (
     SELECT i.final_result AS r, count(*) AS d
     FROM raw.student_info i
     JOIN raw.student_registration g USING (code_module, code_presentation, id_student)
-    WHERE g.date_unregistration = '?' OR g.date_unregistration::int > 0
+    WHERE CASE WHEN rules.na(g.date_unregistration) IS NULL THEN true ELSE g.date_unregistration::int > 0 END
     GROUP BY i.final_result
-) d USING (r);
+)
+SELECT 'сверка: приступившие по итогам курса напрямую из raw',
+       count(*) FILTER (WHERE m.m <> d.d) + abs(4 - count(*)),
+       string_agg(format('%s: %s против %s', r, m.m, d.d), '; ' ORDER BY r)
+FROM m JOIN d USING (r);
 
 -- «Должны сдать» по каждому заданию — вторым выражением, мимо витрины: числятся в день срока минус перенесённые.
 INSERT INTO chk (check_name, bad, note)

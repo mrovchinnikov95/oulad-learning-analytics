@@ -18,9 +18,9 @@
     --pass: #2a78d6;
     --fail: #eb6834;
     --withdrawn: #1baf7a;
-    --oct: #2a78d6;
-    --feb: #eb6834;
-    --series1: #2a78d6;
+    --oct: #7a5bd1;
+    --feb: #9a6a00;
+    --link: #1f6fc9;
     --error: #b00020;
   }
   @media (prefers-color-scheme: dark) {
@@ -28,7 +28,7 @@
       color-scheme: dark;
       --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
       --line: #2c2c2a; --baseline: #383835;
-      --pass: #3987e5; --fail: #d95926; --withdrawn: #199e70; --oct: #3987e5; --feb: #d95926; --series1: #3987e5;
+      --pass: #3987e5; --fail: #d95926; --withdrawn: #199e70; --oct: #9085e9; --feb: #c98500; --link: #6da7ec;
       --error: #ff6b6b;
     }
   }
@@ -36,7 +36,7 @@
     color-scheme: dark;
     --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
     --line: #2c2c2a; --baseline: #383835;
-    --pass: #3987e5; --fail: #d95926; --withdrawn: #199e70; --oct: #3987e5; --feb: #d95926; --series1: #3987e5;
+    --pass: #3987e5; --fail: #d95926; --withdrawn: #199e70; --oct: #9085e9; --feb: #c98500; --link: #6da7ec;
     --error: #ff6b6b;
   }
   * { box-sizing: border-box; }
@@ -45,7 +45,10 @@
   main { max-width: 1200px; margin: 0 auto; padding: 28px 16px 48px; }
   h1 { font-size: 22px; font-weight: 650; margin: 0 0 4px; }
   h2 { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
-  a { color: var(--series1); }
+  a { color: var(--link); }
+  .chart { min-width: 0; }
+  /* широкие таблицы на телефоне прокручиваются внутри своей обёртки, а не всей карточкой */
+  .table-wrap { overflow-x: auto; }
   .sub { color: var(--ink-2); margin: 0 0 20px; }
   .kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
   .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
@@ -67,6 +70,7 @@
   /* переключатель потока — над графиком; vega-embed вешает класс на сам контейнер */
   #activity.vega-embed { display: flex; flex-direction: column; }
   #activity .vega-bindings { order: -1; margin-bottom: 8px; }
+  .card > .note:first-of-type { margin-bottom: 12px; }
   .vega-bind { font-size: 12px; color: var(--ink-2); }
   .vega-bind-name { font-weight: 500; margin-right: 6px; }
   .vega-bind select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; }
@@ -82,22 +86,42 @@
   <section class="kpi" id="kpi" aria-label="Ключевые метрики"></section>
 
   <div class="grid">
-    <section class="card full" id="activity" aria-label="Активность когорт по неделям"></section>
-    <section class="card" id="outcome" aria-label="Итоги курса по потокам"></section>
-    <div style="display:grid; gap:16px; align-content:start; min-width:0">
-      <section class="card" id="feb_oct" aria-label="Февральский поток против октябрьского"></section>
-      <section class="card" id="on_time" aria-label="Сдача в срок, задания TMA"></section>
-    </div>
-    <section class="card full" id="submission" aria-label="Сдача заданий по порядку"></section>
-    <section class="card full" aria-label="Итоги по потокам таблицей">
-      <h2>Итоги по потокам таблицей</h2>
-      <p class="note">Те же данные, что на графиках, числами. Приступили — без отписавшихся до старта.</p>
-      <div id="table"></div>
+    <section class="card full" aria-labelledby="h-activity">
+      <h2 id="h-activity">Активность когорт по неделям</h2>
+      <p class="note">Доля числящихся на курсе, кто хоть раз зашёл в VLE (сайт курса) за неделю. Последняя неделя потока неполная и не показана; «все потоки» — полные недели, которые есть у всех 22 потоков; точки, где в группе меньше 30 человек, скрыты.</p>
+      <div class="chart" id="activity"></div>
     </section>
-    <section class="card full" aria-label="Качество данных">
-      <h2>Качество данных</h2>
+    <section class="card" aria-labelledby="h-outcome">
+      <h2 id="h-outcome">Итоги курса по потокам</h2>
+      <p class="note">Доля приступивших; в подписи потока — доля сдавших курс.</p>
+      <div class="chart" id="outcome"></div>
+    </section>
+    <div style="display:grid; gap:16px; align-content:start; min-width:0">
+      <section class="card" aria-labelledby="h-feb-oct">
+        <h2 id="h-feb-oct">Февральский поток против октябрьского</h2>
+        <p class="note">Доля сдавших курс среди приступивших; пары одного модуля и одного года.</p>
+        <div class="chart" id="feb_oct"></div>
+      </section>
+      <section class="card" aria-labelledby="h-on-time">
+        <h2 id="h-on-time">Сдача в срок, задания TMA</h2>
+        <p class="note">TMA — задания с проверкой тьютором. Доля сданных в день срока или раньше среди сданных. CMA (тесты с автоматической проверкой) не входят: см. «Качество данных», код <code>cma_deadline</code>.</p>
+        <div class="chart" id="on_time"></div>
+      </section>
+    </div>
+    <section class="card full" aria-labelledby="h-submission">
+      <h2 id="h-submission">Сдача заданий TMA по ходу курса</h2>
+      <p class="note">Доля сдавших среди тех, кто числился на курсе в день срока; по оси — день срока задания. CMA здесь не показаны: в части модулей у них общий срок в конце курса.</p>
+      <div class="chart" id="submission"></div>
+    </section>
+    <section class="card full" aria-labelledby="h-table">
+      <h2 id="h-table">Итоги потоков числами</h2>
+      <p class="note">Те же значения, что на графиках итогов, «февраль/октябрь» и сдачи в срок. Приступили — без отписавшихся до старта; отписались — итог Withdrawn среди приступивших; сдача заданий — TMA и CMA.</p>
+      <div class="table-wrap" id="table"></div>
+    </section>
+    <section class="card full" aria-labelledby="h-dq">
+      <h2 id="h-dq">Качество данных</h2>
       <p class="note">Что нашлось в наборе и как это учтено. Ошибки (дубли ключей, битые связи, форматы) останавливают сборку и сюда не попадают.</p>
-      <div id="dq"></div>
+      <div class="table-wrap" id="dq"></div>
     </section>
   </div>
 
@@ -105,10 +129,10 @@
     <p><b>Приступили</b> — зарегистрированные на поток, кроме отписавшихся в день старта или раньше.
        <b>Сдали курс</b> — итог Pass или Distinction. <b>Сдача задания</b> — доля сдавших среди тех, кто числился на курсе в день срока,
        без перенесённых из прошлого потока результатов. <b>В срок</b> — в день срока или раньше, только TMA.
-       <b>Активен на неделе</b> — хотя бы один клик в VLE. Полные определения — <a href="https://github.com/mrovchinnikov95/oulad-learning-analytics/blob/main/docs/spec.md">docs/spec.md</a>.</p>
+       <b>Активен на неделе</b> — хотя бы один клик в VLE за неделю. <b>Студент</b> — регистрация на поток: человек, который учился в двух потоках, посчитан дважды. Полные определения — <a href="https://github.com/mrovchinnikov95/oulad-learning-analytics/blob/main/docs/spec.md">docs/spec.md</a>.</p>
     <p>Данные: Kuzilek J., Hlosta M., Zdrahal Z. Open University Learning Analytics dataset. Scientific Data 4, 170171 (2017),
        <a href="https://doi.org/10.1038/sdata.2017.171">doi:10.1038/sdata.2017.171</a>; лицензия
-       <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Данные агрегированы, в репозиторий не копируются.
+       <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Исходные файлы в репозиторий не копируются; на странице — агрегаты, изменённая производная набора.
        Код — <a href="https://github.com/mrovchinnikov95/oulad-learning-analytics">github.com/mrovchinnikov95/oulad-learning-analytics</a>.</p>
   </footer>
 </main>
@@ -124,7 +148,7 @@
   const CHARTS = ["activity", "outcome", "feb_oct", "on_time", "submission"];
   const RU_LOCALE = { decimal: ",", thousands: " ", grouping: [3], currency: ["", ""], percent: "%" };
   const KPI = [
-    ["started", "приступили к 22 потокам"],
+    ["started", "регистраций «студент — поток» приступили к учёбе"],
     ["pass_rate", "приступивших сдали курс"],
     ["withdrawn_rate", "приступивших отписались по ходу курса"],
     ["submission_rate", "положенных заданий TMA и CMA сдано"],
@@ -133,7 +157,6 @@
   ];
 
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim();
-  const TOKENS = ["surface", "ink", "ink-2", "muted", "line", "baseline", "pass", "fail", "withdrawn", "oct", "feb", "series1"];
   const tokenValue = (name) => css(name === "ink2" ? "ink-2" : name);
 
   // В спеках цвета записаны ролями ("token:pass"); значения берутся из CSS текущей темы.
@@ -162,7 +185,8 @@
   }
 
   const fmtInt = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
-  const fmtPct = new Intl.NumberFormat("ru-RU", { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const pct = new Intl.NumberFormat("ru-RU", { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const fmtPct = { format: (v) => pct.format(v).replace(/\s/g, "") };  // «73,9%», как в плитках и на графиках
 
   async function getJson(url) {
     const res = await fetch(url);
@@ -197,26 +221,30 @@
       `<table><thead><tr><th>Код</th><th>Что нашлось</th><th class="num">Сколько</th><th>Чего</th><th>Как учтено</th></tr></thead><tbody>${body}</tbody></table>`;
   }
 
-  async function main() {
-    const [facts, outcome, quality] = await Promise.all([
-      getJson("data/readme_facts.json"), getJson("data/presentation_outcome.json"), getJson("data/data_quality.json"),
-    ]);
-    const f = Object.fromEntries(facts.map((x) => [x.code, x.display]));
-    document.getElementById("period").textContent =
-      `Open University, ${f.modules} модулей, ${f.presentations} потока, 2013–2014 · ${f.registrations} регистраций, `
-      + `из них ${f.started} приступили · дни считаются от старта потока`;
-    renderKpi(facts);
-    renderTable(outcome);
-    renderDataQuality(quality);
+  // Ширина графика — по карточке минус место под подписи осей и легенду (у каждого графика своё).
+  const RESERVE = { activity: 120, outcome: 150, feb_oct: 100, on_time: 100 };
+  const RESERVE_PHONE = { outcome: 190 };  // уже 420px подписи потоков занимают больше доли ширины
 
-    const flows = outcome.map((r) => `${r.code_module} ${r.code_presentation}`);
+  async function renderCharts(specs, flows) {
     const config = theme();
-    const results = await Promise.allSettled(CHARTS.map(async (id) => {
-      const spec = resolveTokens(await getJson(`specs/${id}.vl.json`));
+    const results = await Promise.allSettled(CHARTS.map((id) => {
+      const el = document.getElementById(id);
+      const spec = resolveTokens(structuredClone(specs[id]));
+      const w = el.clientWidth;
       if (id === "activity") spec.params[0].bind.options = ["все потоки", ...flows];
-      // "container" в Vega-Lite включает autosize по обеим осям и спорит с высотой по шагу строки,
-      // поэтому ширину берём у карточки один раз при отрисовке.
-      if (spec.width === "container") spec.width = Math.max(260, document.getElementById(id).clientWidth - 140);
+      if (id === "submission") {
+        spec.columns = w < 560 ? 1 : w < 900 ? 2 : 4;
+        spec.spec.width = Math.max(180, Math.floor((w - 16 * (spec.columns - 1)) / spec.columns) - 70);
+      } else if (spec.width === "container") {
+        // "container" в Vega-Lite включает autosize по обеим осям и спорит с высотой по шагу строки.
+        spec.width = Math.max(120, w - ((w < 420 && RESERVE_PHONE[id]) || RESERVE[id]));
+      }
+      if (id === "feb_oct" && w < 420) spec.layer[1].encoding.x.axis.tickCount = 3;  // иначе подписи оси слипаются
+      if (id === "outcome" && w < 420) {
+        spec.encoding.y.axis.labelLimit = 130;
+        // Горизонтальная легенда начинается от края области графика и на телефоне вылезает за карточку.
+        spec.encoding.color.legend = { orient: "bottom", direction: "vertical", title: null };
+      }
       return vegaEmbed(`#${id}`, spec, { actions: false, renderer: "svg", config, formatLocale: RU_LOCALE });
     }));
     const failed = [];
@@ -227,6 +255,31 @@
         document.getElementById(CHARTS[i]).innerHTML = `<p class="error">График не отрисован: ${esc(r.reason)}</p>`;
       }
     });
+    return failed;
+  }
+
+  async function main() {
+    const [facts, outcome, quality] = await Promise.all([
+      getJson("data/readme_facts.json"), getJson("data/presentation_outcome.json"), getJson("data/data_quality.json"),
+    ]);
+    const f = Object.fromEntries(facts.map((x) => [x.code, x.display]));
+    document.getElementById("period").textContent =
+      `Open University, ${f.modules} модулей, ${f.presentations} потока, 2013–2014 · регистраций — ${f.registrations}, `
+      + `из них приступили — ${f.started} · дни считаются от старта потока`;
+    renderKpi(facts);
+    renderTable(outcome);
+    renderDataQuality(quality);
+
+    const flows = outcome.map((r) => `${r.code_module} ${r.code_presentation}`);
+    const specs = Object.fromEntries(await Promise.all(CHARTS.map(async (id) => [id, await getJson(`specs/${id}.vl.json`)])));
+    const failed = await renderCharts(specs, flows);
+    // Ширина и тема читаются при отрисовке: при смене ширины окна или темы ОС графики рисуются заново.
+    let timer = null, lastWidth = window.innerWidth;
+    window.addEventListener("resize", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { if (Math.abs(window.innerWidth - lastWidth) > 40) { lastWidth = window.innerWidth; renderCharts(specs, flows); } }, 250);
+    });
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => renderCharts(specs, flows));
     // Сигнал для скрипта скриншота: всё нарисовано или что-то упало.
     document.body.dataset.rendered = failed.length ? `error:${failed.join(",")}` : "ok";
   }

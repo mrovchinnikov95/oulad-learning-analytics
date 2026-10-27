@@ -10,7 +10,7 @@ mkdir -p "$T"
 source scripts/env.sh
 scripts/pg_local.sh start
 trap 'scripts/pg_local.sh stop >/dev/null' EXIT
-OUT_DIR="$T/out" STUDENTS_CSV="$T/out/student_presentation.csv" scripts/build.sh > "$T/build.log" 2>&1 || { cat "$T/build.log"; exit 1; }
+OUT_DIR="$T/out" STUDENTS_CSV="$T/out/student_presentation.csv" LOG_DIR="$T/logs" scripts/build.sh > "$T/build.log" 2>&1 || { cat "$T/build.log"; exit 1; }
 grep -E "^  Проверок" "$T/build.log"
 files=0
 for f in "$T"/out/*; do

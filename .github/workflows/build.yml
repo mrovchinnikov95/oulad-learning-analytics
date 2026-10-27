@@ -1,0 +1,58 @@
+# Сборка с нуля на чистой машине: скачать OULAD, собрать витрины, прогнать все проверки.
+# Те же команды, что в README («Как запустить»), только PostgreSQL — сервис postgres:16.
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: oulad
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: oulad
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: pandas
+        run: python -m pip install pandas==2.3.3
+      - name: versions
+        run: |
+          psql -X -tAc 'SHOW server_version'
+          python3 -I -c 'import pandas, sys; print(sys.version.split()[0], pandas.__version__)'
+      - name: make data
+        run: make data
+      - name: make build
+        run: make build
+      - name: make test
+        run: make test
+      - name: make check
+        run: make check
+      - name: logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs
+          path: |
+            .tmp/*.log
+            .tmp/*.out
+          if-no-files-found: ignore

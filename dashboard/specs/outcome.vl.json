@@ -1,10 +1,6 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-  "description": "Итоги приступивших по потокам: сдали (Pass и Distinction), провалили, отписались. Источник: mart.presentation_outcome.",
-  "title": {
-    "text": "Итоги курса по потокам",
-    "subtitle": "Доля приступивших; в подписи потока — доля сдавших"
-  },
+  "description": "Итоги курса по потокам: доля приступивших, которые сдали курс, провалили его или отписались.",
   "data": {
     "url": "data/presentation_outcome.json"
   },
@@ -98,7 +94,8 @@
       },
       "legend": {
         "orient": "top",
-        "direction": "horizontal"
+        "direction": "horizontal",
+        "title": null
       }
     },
     "order": {

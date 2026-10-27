@@ -1,43 +1,187 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-  "description": "Доля сдавших каждое задание TMA/CMA среди тех, кто должен был сдать, по порядку заданий. Источник: mart.assessment_submission.",
-  "title": {"text": "Сдача заданий по порядку", "subtitle": "Доля сдавших среди тех, кто числился на курсе в день срока; задания TMA и CMA"},
-  "data": {"url": "data/assessment_submission.json"},
+  "description": "Доля сдавших каждое задание TMA среди тех, кто числился на курсе в день срока, по дню срока, для каждого потока.",
+  "data": {
+    "url": "data/assessment_submission.json"
+  },
   "transform": [
-    {"calculate": "datum.code_module + ' ' + datum.code_presentation", "as": "presentation"},
-    {"calculate": "slice(datum.code_presentation, 4) == 'B' ? 'февраль' : 'октябрь'", "as": "month"},
-    {"calculate": "slice(datum.code_presentation, 0, 4)", "as": "year"}
+    {
+      "filter": "datum.assessment_type == 'TMA'"
+    },
+    {
+      "calculate": "datum.code_module + ' ' + datum.code_presentation",
+      "as": "presentation"
+    },
+    {
+      "calculate": "slice(datum.code_presentation, 4) == 'B' ? 'февраль' : 'октябрь'",
+      "as": "month"
+    },
+    {
+      "calculate": "slice(datum.code_presentation, 0, 4)",
+      "as": "year"
+    }
   ],
-  "facet": {"field": "code_module", "type": "nominal", "title": null, "header": {"labelFontSize": 12, "labelFontWeight": 600, "labelPadding": 4}},
+  "facet": {
+    "field": "code_module",
+    "type": "nominal",
+    "title": null,
+    "header": {
+      "labelFontSize": 12,
+      "labelFontWeight": 600,
+      "labelPadding": 4
+    }
+  },
   "columns": 4,
-  "spacing": {"row": 16, "column": 16},
+  "spacing": {
+    "row": 16,
+    "column": 16
+  },
+  "resolve": {
+    "scale": {
+      "x": "independent"
+    }
+  },
   "spec": {
     "width": 200,
     "height": 130,
+    "encoding": {
+      "x": {
+        "field": "deadline_day",
+        "type": "quantitative",
+        "title": "день срока",
+        "axis": {
+          "format": "d",
+          "tickCount": 4
+        }
+      },
+      "y": {
+        "field": "submission_rate",
+        "type": "quantitative",
+        "title": null,
+        "scale": {
+          "domain": [
+            0.4,
+            1
+          ]
+        },
+        "axis": {
+          "format": ".0%",
+          "tickCount": 4
+        }
+      },
+      "color": {
+        "field": "month",
+        "type": "nominal",
+        "title": "Старт",
+        "scale": {
+          "domain": [
+            "октябрь",
+            "февраль"
+          ],
+          "range": [
+            "token:oct",
+            "token:feb"
+          ]
+        }
+      },
+      "detail": {
+        "field": "presentation"
+      }
+    },
     "layer": [
-      {"mark": {"type": "line", "strokeWidth": 2, "interpolate": "monotone"},
-       "encoding": {
-         "x": {"field": "seq", "type": "quantitative", "title": "задание №", "axis": {"tickMinStep": 1, "format": "d"}},
-         "y": {"field": "submission_rate", "type": "quantitative", "title": null,
-               "scale": {"domain": [0.4, 1]}, "axis": {"format": ".0%", "tickCount": 4}},
-         "color": {"field": "month", "type": "nominal", "title": "Старт",
-                   "scale": {"domain": ["октябрь", "февраль"], "range": ["token:oct", "token:feb"]}},
-         "strokeDash": {"field": "year", "type": "nominal", "title": "Год",
-                        "scale": {"domain": ["2013", "2014"], "range": [[1, 0], [5, 3]]}},
-         "detail": {"field": "presentation"}}},
-      {"mark": {"type": "point", "filled": true, "size": 64, "opacity": 0},
-       "encoding": {
-         "x": {"field": "seq", "type": "quantitative"},
-         "y": {"field": "submission_rate", "type": "quantitative"},
-         "tooltip": [
-           {"field": "presentation", "title": "Поток"},
-           {"field": "seq", "title": "Задание №"},
-           {"field": "assessment_type", "title": "Тип"},
-           {"field": "deadline_day", "title": "Срок, день"},
-           {"field": "expected", "title": "Должны сдать", "format": ",d"},
-           {"field": "submitted", "title": "Сдали", "format": ",d"},
-           {"field": "submission_rate", "title": "Доля", "format": ".1%"}
-         ]}}
+      {
+        "mark": {
+          "type": "line",
+          "strokeWidth": 2,
+          "interpolate": "linear",
+          "aria": false
+        },
+        "encoding": {
+          "strokeDash": {
+            "field": "year",
+            "type": "nominal",
+            "title": "Год",
+            "scale": {
+              "domain": [
+                "2013",
+                "2014"
+              ],
+              "range": [
+                [
+                  1,
+                  0
+                ],
+                [
+                  5,
+                  3
+                ]
+              ]
+            }
+          }
+        }
+      },
+      {
+        "mark": {
+          "type": "point",
+          "filled": true,
+          "size": 40,
+          "opacity": 1,
+          "stroke": "token:surface",
+          "strokeWidth": 1
+        },
+        "encoding": {
+          "shape": {
+            "field": "month",
+            "type": "nominal",
+            "title": "Старт",
+            "scale": {
+              "domain": [
+                "октябрь",
+                "февраль"
+              ],
+              "range": [
+                "circle",
+                "diamond"
+              ]
+            }
+          },
+          "tooltip": [
+            {
+              "field": "presentation",
+              "title": "Поток"
+            },
+            {
+              "field": "seq",
+              "title": "Задание № (TMA и CMA)"
+            },
+            {
+              "field": "deadline_day",
+              "title": "Срок, день"
+            },
+            {
+              "field": "expected",
+              "title": "Должны сдать",
+              "format": ",d"
+            },
+            {
+              "field": "submitted",
+              "title": "Сдали",
+              "format": ",d"
+            },
+            {
+              "field": "submission_rate",
+              "title": "Доля",
+              "format": ".1%"
+            }
+          ]
+        }
+      }
     ]
+  },
+  "config": {
+    "legend": {
+      "orient": "bottom",
+      "direction": "horizontal"
+    }
   }
 }

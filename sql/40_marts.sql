@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS mart.expected_submission, mart.assessment_submission, mart.
                      mart.presentation_outcome, mart.cohort_week_activity CASCADE;
 
 -- Кто должен был сдать задание (R5): студент числится на курсе в день срока (R2) и результат
--- не перенесён из прошлого потока (R6). Зерно — задание × студент. Сдано (R6) — есть строка сдачи
+-- не перенесён из прошлого потока (тоже R5). Зерно — задание × студент. Сдано (R6) — есть строка сдачи
 -- без переноса; в срок (R7) — в день срока или раньше.
 CREATE TABLE mart.expected_submission AS
 SELECT a.code_module,
