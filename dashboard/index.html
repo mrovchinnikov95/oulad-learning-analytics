@@ -47,6 +47,8 @@
   h2 { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
   a { color: var(--link); }
   .chart { min-width: 0; }
+  /* vega-embed делает контейнер inline-block, и при перерисовке ширина бралась бы у прошлого графика */
+  .chart.vega-embed { display: block; }
   /* широкие таблицы на телефоне прокручиваются внутри своей обёртки, а не всей карточкой */
   .table-wrap { overflow-x: auto; }
   .sub { color: var(--ink-2); margin: 0 0 20px; }

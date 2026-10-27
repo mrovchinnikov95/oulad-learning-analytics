@@ -1,6 +1,7 @@
-// Открывает дашборд в headless Chromium в светлой и тёмной теме, проверяет, что все графики
+// Открывает дашборд в headless Chromium в светлой и тёмной теме, на ширине планшета и телефона, проверяет, что все графики
 // отрисованы без ошибок и предупреждений в консоли, и сохраняет скриншоты: светлый — в docs/dashboard.png
-// (он в README), тёмный и телефонный — в .tmp/ для просмотра.
+// (он в README), тёмный, планшетный и телефонный — в .tmp/ для просмотра. Затем меняет ширину окна и тему
+// без перезагрузки и проверяет, что графики перерисовываются под карточку.
 // Запуск: npm install && npx playwright install chromium && node scripts/screenshot.mjs
 // Код возврата 1 — если график не отрисован, в консоли есть ошибка/предупреждение
 // или не загрузился какой-то файл.
@@ -65,6 +66,33 @@ try {
     if (tiles !== 6) problems.push(`${tag}: плиток ${tiles}, ожидалось 6`);
     await page.screenshot({ path: out, fullPage: true });
     console.log(`${tag}: графиков ${charts}, плиток ${tiles}, скриншот ${out.replace(/^.*\/(docs|\.tmp)\//, "$1/")}`);
+    await page.close();
+  }
+  // Перерисовка без перезагрузки: смена ширины окна (поворот телефона) и темы ОС. После каждого шага
+  // графики не шире карточек, а после возврата к исходной ширине — прежней ширины (не сужаются).
+  {
+    const tag = "resize";
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, colorScheme: "light" });
+    page.on("console", (msg) => { if (msg.type() === "error" || msg.type() === "warning") problems.push(`${tag}: console.${msg.type()}: ${msg.text()}`); });
+    page.on("pageerror", (err) => problems.push(`${tag}: pageerror: ${err.message}`));
+    await page.goto(url, { waitUntil: "networkidle" });
+    await page.waitForSelector("body[data-rendered]");
+    const widths = () => page.$$eval(".chart svg.marks", (els) => els.map((e) => Math.round(e.getBoundingClientRect().width)));
+    const clippedCards = () => page.$$eval(".card", (els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.getAttribute("aria-labelledby")));
+    const settle = () => page.waitForTimeout(1200);  // обработчик ждёт 250 мс, потом рисует заново
+    const initial = await widths();
+    for (const [step, act] of [["700px", () => page.setViewportSize({ width: 700, height: 900 })],
+                               ["390px", () => page.setViewportSize({ width: 390, height: 900 })],
+                               ["1280px", () => page.setViewportSize({ width: 1280, height: 900 })],
+                               ["тёмная тема", () => page.emulateMedia({ colorScheme: "dark" })],
+                               ["светлая тема", () => page.emulateMedia({ colorScheme: "light" })]]) {
+      await act(); await settle();
+      const clipped = await clippedCards();
+      if (clipped.length) problems.push(`${tag} ${step}: графики шире карточек: ${clipped.join(", ")}`);
+    }
+    const after = await widths();
+    if (JSON.stringify(after) !== JSON.stringify(initial)) problems.push(`${tag}: после цикла ширины графиков ${after} вместо ${initial}`);
+    console.log(`${tag}: 1280 → 700 → 390 → 1280 → тёмная → светлая, ширины графиков ${after.join("/")}`);
     await page.close();
   }
 } finally {

@@ -43,7 +43,7 @@ CREATE OR REPLACE FUNCTION rules.assessment_in_scope(assessment_type text) RETUR
 LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$ SELECT assessment_type IN ('TMA', 'CMA') $$;
 
 -- Долю «в срок» можно мерить только у TMA. У CMA в модулях BBB, CCC и DDD в день срока или раньше
--- пришли 2 сдачи из 30 526 (почти все — через 2–3 дня после срока), а в FFF и GGG у всех CMA потока
+-- пришли 2 сдачи из 30 526 (почти все сдачи задания — одним днём, через 2–6 дней после срока), а в FFF и GGG у всех CMA потока
 -- один общий срок в конце курса: срок у CMA в разных модулях значит разное (qa.data_quality, cma_deadline).
 CREATE OR REPLACE FUNCTION rules.on_time_measurable(assessment_type text) RETURNS boolean
 LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$ SELECT assessment_type = 'TMA' $$;

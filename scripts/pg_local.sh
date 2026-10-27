@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Одноразовый кластер PostgreSQL внутри репозитория (.pgdata, в .gitignore).
 # Использование: scripts/pg_local.sh start|stop|status|reset
-# Нужен PostgreSQL 16+: initdb и pg_ctl в PATH или каталог с ними в PG_BIN;
+# Нужен PostgreSQL 16+: initdb, pg_ctl, psql и createdb в PATH или каталог с ними в PG_BIN;
 # каталог кластера можно сменить через PG_DATA_DIR (по умолчанию ./.pgdata).
 set -euo pipefail
 cd "$(dirname "$0")/.."

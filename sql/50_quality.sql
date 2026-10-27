@@ -67,7 +67,7 @@ SELECT row_number() OVER (ORDER BY ord), code, 'warning', n, unit, description, 
                            WHERE assessment_type = 'CMA' AND submitted
                            GROUP BY code_module
                            HAVING rules.cma_deadline_unreliable(count(*) FILTER (WHERE on_time), count(*)))), 'сдач',
-  'Сдачи CMA в модулях, где в срок приходит меньше 1% CMA (BBB, CCC, DDD): почти все — через 2–3 дня после срока, в срок 2 сдачи, обе раньше срока на 27 и 141 день.',
+  'Сдачи CMA в модулях, где в срок приходит меньше 1% CMA (BBB, CCC, DDD): почти все сдачи одного задания записаны одним днём, через 2–6 дней после срока; в срок 2 сдачи, обе раньше срока на 27 и 141 день.',
   'Доля «в срок» считается только по TMA (R7); сдача CMA в доли сдачи входит.'),
  (12, 'vle_repeated_key',
   (SELECT sum(log_rows) - count(*) FROM (
