@@ -1,0 +1,133 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "Итоги приступивших по потокам: сдали (Pass и Distinction), провалили, отписались. Источник: mart.presentation_outcome.",
+  "title": {
+    "text": "Итоги курса по потокам",
+    "subtitle": "Доля приступивших; в подписи потока — доля сдавших"
+  },
+  "data": {
+    "url": "data/presentation_outcome.json"
+  },
+  "transform": [
+    {
+      "calculate": "datum.code_module + ' ' + datum.code_presentation + ' · ' + format(datum.pass_rate, '.1%')",
+      "as": "label"
+    },
+    {
+      "calculate": "datum.code_module + ' ' + datum.code_presentation",
+      "as": "sort_key"
+    },
+    {
+      "calculate": "datum.started_distinction + datum.started_pass",
+      "as": "n_pass"
+    },
+    {
+      "fold": [
+        "n_pass",
+        "started_fail",
+        "started_withdrawn"
+      ],
+      "as": [
+        "key",
+        "n"
+      ]
+    },
+    {
+      "calculate": "{'n_pass': 'сдали', 'started_fail': 'провалили', 'started_withdrawn': 'отписались'}[datum.key]",
+      "as": "group"
+    },
+    {
+      "calculate": "{'n_pass': 0, 'started_fail': 1, 'started_withdrawn': 2}[datum.key]",
+      "as": "group_order"
+    },
+    {
+      "calculate": "datum.n / datum.started",
+      "as": "share"
+    }
+  ],
+  "width": "container",
+  "height": {
+    "step": 20
+  },
+  "mark": {
+    "type": "bar",
+    "stroke": "token:surface",
+    "strokeWidth": 1,
+    "height": {
+      "band": 0.72
+    }
+  },
+  "encoding": {
+    "y": {
+      "field": "label",
+      "type": "nominal",
+      "sort": {
+        "field": "sort_key"
+      },
+      "title": null,
+      "axis": {
+        "labelFontSize": 11,
+        "labelLimit": 220
+      }
+    },
+    "x": {
+      "field": "n",
+      "type": "quantitative",
+      "stack": "normalize",
+      "title": null,
+      "axis": {
+        "format": ".0%",
+        "tickCount": 5
+      }
+    },
+    "color": {
+      "field": "group",
+      "type": "nominal",
+      "title": null,
+      "scale": {
+        "domain": [
+          "сдали",
+          "провалили",
+          "отписались"
+        ],
+        "range": [
+          "token:pass",
+          "token:fail",
+          "token:withdrawn"
+        ]
+      },
+      "legend": {
+        "orient": "top",
+        "direction": "horizontal"
+      }
+    },
+    "order": {
+      "field": "group_order"
+    },
+    "tooltip": [
+      {
+        "field": "sort_key",
+        "title": "Поток"
+      },
+      {
+        "field": "group",
+        "title": "Итог"
+      },
+      {
+        "field": "n",
+        "title": "Студентов",
+        "format": ",d"
+      },
+      {
+        "field": "share",
+        "title": "Доля приступивших",
+        "format": ".1%"
+      },
+      {
+        "field": "started",
+        "title": "Приступили",
+        "format": ",d"
+      }
+    ]
+  }
+}

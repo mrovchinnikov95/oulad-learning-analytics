@@ -1,0 +1,160 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "Доля сдавших в февральском и октябрьском потоке одного модуля и одного года. Источник: mart.presentation_outcome.",
+  "title": {
+    "text": "Февральский поток против октябрьского",
+    "subtitle": "Доля сдавших среди приступивших; пары одного модуля и года"
+  },
+  "data": {
+    "url": "data/presentation_outcome.json"
+  },
+  "transform": [
+    {
+      "joinaggregate": [
+        {
+          "op": "count",
+          "as": "in_pair"
+        }
+      ],
+      "groupby": [
+        "code_module",
+        "start_year"
+      ]
+    },
+    {
+      "filter": "datum.in_pair == 2"
+    },
+    {
+      "calculate": "datum.code_module + ' ' + datum.start_year",
+      "as": "pair"
+    },
+    {
+      "calculate": "datum.start_month_code == 'B' ? 'февраль' : 'октябрь'",
+      "as": "month"
+    },
+    {
+      "calculate": "datum.code_module + ' ' + datum.code_presentation",
+      "as": "presentation"
+    }
+  ],
+  "width": "container",
+  "height": {
+    "step": 26
+  },
+  "encoding": {
+    "y": {
+      "field": "pair",
+      "type": "nominal",
+      "title": null,
+      "sort": "ascending"
+    }
+  },
+  "layer": [
+    {
+      "mark": {
+        "type": "rule",
+        "color": "token:baseline",
+        "strokeWidth": 2
+      },
+      "encoding": {
+        "x": {
+          "aggregate": "min",
+          "field": "pass_rate",
+          "scale": {
+            "domain": [
+              0.35,
+              0.65
+            ],
+            "zero": false
+          },
+          "type": "quantitative"
+        },
+        "x2": {
+          "aggregate": "max",
+          "field": "pass_rate"
+        }
+      }
+    },
+    {
+      "mark": {
+        "type": "point",
+        "filled": true,
+        "size": 110,
+        "opacity": 1,
+        "stroke": "token:surface",
+        "strokeWidth": 2
+      },
+      "encoding": {
+        "x": {
+          "field": "pass_rate",
+          "type": "quantitative",
+          "title": null,
+          "scale": {
+            "domain": [
+              0.35,
+              0.65
+            ],
+            "zero": false
+          },
+          "axis": {
+            "format": ".0%",
+            "tickCount": 6
+          }
+        },
+        "color": {
+          "field": "month",
+          "type": "nominal",
+          "title": null,
+          "scale": {
+            "domain": [
+              "октябрь",
+              "февраль"
+            ],
+            "range": [
+              "token:oct",
+              "token:feb"
+            ]
+          },
+          "legend": {
+            "orient": "top",
+            "direction": "horizontal"
+          }
+        },
+        "shape": {
+          "field": "month",
+          "type": "nominal",
+          "scale": {
+            "domain": [
+              "октябрь",
+              "февраль"
+            ],
+            "range": [
+              "circle",
+              "diamond"
+            ]
+          }
+        },
+        "tooltip": [
+          {
+            "field": "presentation",
+            "title": "Поток"
+          },
+          {
+            "field": "pass_rate",
+            "title": "Сдали",
+            "format": ".1%"
+          },
+          {
+            "field": "started",
+            "title": "Приступили",
+            "format": ",d"
+          },
+          {
+            "field": "length_days",
+            "title": "Длина, дней"
+          }
+        ]
+      }
+    }
+  ]
+}

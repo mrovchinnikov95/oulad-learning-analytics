@@ -1,0 +1,79 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "Доля сданных в срок среди сданных заданий TMA по потокам. Источник: mart.presentation_outcome (tma_on_time_share).",
+  "title": {
+    "text": "Сдача в срок, задания TMA",
+    "subtitle": [
+      "Доля сданных в день срока или раньше среди сданных",
+      "CMA не входят: см. «Качество данных», код cma_deadline"
+    ]
+  },
+  "data": {
+    "url": "data/presentation_outcome.json"
+  },
+  "transform": [
+    {
+      "calculate": "datum.code_module + ' ' + datum.code_presentation",
+      "as": "presentation"
+    }
+  ],
+  "width": "container",
+  "height": {
+    "step": 20
+  },
+  "mark": {
+    "type": "bar",
+    "color": "token:series1",
+    "height": {
+      "band": 0.6
+    },
+    "cornerRadiusEnd": 4
+  },
+  "encoding": {
+    "y": {
+      "field": "presentation",
+      "type": "nominal",
+      "title": null,
+      "sort": "ascending",
+      "axis": {
+        "labelFontSize": 11
+      }
+    },
+    "x": {
+      "field": "tma_on_time_share",
+      "type": "quantitative",
+      "title": null,
+      "scale": {
+        "domain": [
+          0,
+          1
+        ]
+      },
+      "axis": {
+        "format": ".0%",
+        "tickCount": 5
+      }
+    },
+    "tooltip": [
+      {
+        "field": "presentation",
+        "title": "Поток"
+      },
+      {
+        "field": "tma_on_time",
+        "title": "Сдано в срок",
+        "format": ",d"
+      },
+      {
+        "field": "tma_submitted",
+        "title": "Сдано TMA",
+        "format": ",d"
+      },
+      {
+        "field": "tma_on_time_share",
+        "title": "Доля в срок",
+        "format": ".1%"
+      }
+    ]
+  }
+}

@@ -1,0 +1,273 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "Доля студентов когорты недели, у которых был хотя бы один клик в VLE за неделю, по группам итога. Источник: mart.cohort_week_activity.",
+  "title": {
+    "text": "Активность когорт по неделям",
+    "subtitle": [
+      "Доля числящихся на курсе, кто хоть раз зашёл в VLE за неделю",
+      "«Все потоки» — недели, которые есть у всех 22 потоков (самый короткий — 34 недели); точки, где в группе меньше 30 человек, скрыты"
+    ]
+  },
+  "data": {
+    "url": "data/cohort_week_activity.json"
+  },
+  "params": [
+    {
+      "name": "flow",
+      "value": "все потоки",
+      "bind": {
+        "input": "select",
+        "name": "Поток ",
+        "options": [
+          "все потоки"
+        ]
+      }
+    }
+  ],
+  "transform": [
+    {
+      "calculate": "datum.code_module + ' ' + datum.code_presentation",
+      "as": "presentation"
+    },
+    {
+      "filter": "flow == 'все потоки' || datum.presentation == flow"
+    },
+    {
+      "aggregate": [
+        {
+          "op": "sum",
+          "field": "enrolled",
+          "as": "enrolled"
+        },
+        {
+          "op": "sum",
+          "field": "active",
+          "as": "active"
+        },
+        {
+          "op": "distinct",
+          "field": "presentation",
+          "as": "n_flows"
+        }
+      ],
+      "groupby": [
+        "week",
+        "outcome_group"
+      ]
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "n_flows",
+          "as": "max_flows"
+        }
+      ]
+    },
+    {
+      "filter": "flow != 'все потоки' || datum.n_flows == datum.max_flows"
+    },
+    {
+      "filter": "datum.enrolled >= 30"
+    },
+    {
+      "calculate": "datum.active / datum.enrolled",
+      "as": "share"
+    },
+    {
+      "calculate": "{'pass': 'сдали', 'fail': 'провалили', 'withdrawn': 'отписались'}[datum.outcome_group]",
+      "as": "group"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "week",
+          "as": "last_week"
+        }
+      ],
+      "groupby": [
+        "group"
+      ]
+    }
+  ],
+  "width": "container",
+  "height": 300,
+  "encoding": {
+    "x": {
+      "field": "week",
+      "type": "quantitative",
+      "title": "неделя курса",
+      "axis": {
+        "tickMinStep": 1,
+        "format": "d"
+      },
+      "scale": {
+        "nice": false
+      }
+    },
+    "y": {
+      "field": "share",
+      "type": "quantitative",
+      "title": null,
+      "scale": {
+        "domain": [
+          0,
+          1
+        ]
+      },
+      "axis": {
+        "format": ".0%",
+        "tickCount": 5
+      }
+    },
+    "color": {
+      "field": "group",
+      "type": "nominal",
+      "title": null,
+      "scale": {
+        "domain": [
+          "сдали",
+          "провалили",
+          "отписались"
+        ],
+        "range": [
+          "token:pass",
+          "token:fail",
+          "token:withdrawn"
+        ]
+      },
+      "legend": {
+        "orient": "top",
+        "direction": "horizontal"
+      }
+    }
+  },
+  "layer": [
+    {
+      "mark": {
+        "type": "line",
+        "strokeWidth": 2
+      }
+    },
+    {
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "dx": 6,
+        "fontSize": 11,
+        "color": "token:ink2"
+      },
+      "transform": [
+        {
+          "filter": "datum.week == datum.last_week"
+        }
+      ],
+      "encoding": {
+        "text": {
+          "field": "group"
+        }
+      }
+    },
+    {
+      "params": [
+        {
+          "name": "hover",
+          "select": {
+            "type": "point",
+            "fields": [
+              "week"
+            ],
+            "nearest": true,
+            "on": "pointerover",
+            "clear": "pointerout"
+          }
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "color": "token:muted",
+        "strokeWidth": 1
+      },
+      "encoding": {
+        "opacity": {
+          "condition": {
+            "param": "hover",
+            "empty": false,
+            "value": 1
+          },
+          "value": 0
+        },
+        "tooltip": [
+          {
+            "field": "week",
+            "title": "Неделя"
+          },
+          {
+            "field": "group",
+            "title": "Группа"
+          },
+          {
+            "field": "share",
+            "title": "Активны",
+            "format": ".1%"
+          },
+          {
+            "field": "active",
+            "title": "Активных",
+            "format": ",d"
+          },
+          {
+            "field": "enrolled",
+            "title": "Числятся",
+            "format": ",d"
+          }
+        ]
+      }
+    },
+    {
+      "mark": {
+        "type": "point",
+        "filled": true,
+        "size": 70,
+        "stroke": "token:surface",
+        "strokeWidth": 2
+      },
+      "encoding": {
+        "opacity": {
+          "condition": {
+            "param": "hover",
+            "empty": false,
+            "value": 1
+          },
+          "value": 0
+        },
+        "tooltip": [
+          {
+            "field": "week",
+            "title": "Неделя"
+          },
+          {
+            "field": "group",
+            "title": "Группа"
+          },
+          {
+            "field": "share",
+            "title": "Активны",
+            "format": ".1%"
+          },
+          {
+            "field": "active",
+            "title": "Активных",
+            "format": ",d"
+          },
+          {
+            "field": "enrolled",
+            "title": "Числятся",
+            "format": ",d"
+          }
+        ]
+      }
+    }
+  ]
+}

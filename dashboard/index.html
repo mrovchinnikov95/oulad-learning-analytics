@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Успешность студентов OULAD</title>
+<meta name="description" content="Сдача заданий, сдача в срок, итоги потоков и активность когорт по открытому набору Open University Learning Analytics Dataset.">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --line: #e1e0d9;
+    --baseline: #c3c2b7;
+    --pass: #2a78d6;
+    --fail: #eb6834;
+    --withdrawn: #1baf7a;
+    --oct: #2a78d6;
+    --feb: #eb6834;
+    --series1: #2a78d6;
+    --error: #b00020;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+      --line: #2c2c2a; --baseline: #383835;
+      --pass: #3987e5; --fail: #d95926; --withdrawn: #199e70; --oct: #3987e5; --feb: #d95926; --series1: #3987e5;
+      --error: #ff6b6b;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --line: #2c2c2a; --baseline: #383835;
+    --pass: #3987e5; --fail: #d95926; --withdrawn: #199e70; --oct: #3987e5; --feb: #d95926; --series1: #3987e5;
+    --error: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink);
+         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1200px; margin: 0 auto; padding: 28px 16px 48px; }
+  h1 { font-size: 22px; font-weight: 650; margin: 0 0 4px; }
+  h2 { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+  a { color: var(--series1); }
+  .sub { color: var(--ink-2); margin: 0 0 20px; }
+  .kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .tile .v { font-size: 26px; font-weight: 650; line-height: 1.15; }
+  .tile .k { color: var(--ink-2); font-size: 12px; margin-top: 4px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; overflow-x: auto; min-width: 0; }
+  .full { grid-column: 1 / -1; }
+  @media (max-width: 1040px) { .grid { grid-template-columns: 1fr; } }
+  .note { color: var(--ink-2); font-size: 12px; margin: 0 0 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--ink-2); font-weight: 500; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  code { font-size: 12px; }
+  .error { color: var(--error); }
+  footer { color: var(--ink-2); font-size: 12px; margin-top: 20px; }
+  footer p { margin: 4px 0; }
+  /* переключатель потока — над графиком; vega-embed вешает класс на сам контейнер */
+  #activity.vega-embed { display: flex; flex-direction: column; }
+  #activity .vega-bindings { order: -1; margin-bottom: 8px; }
+  .vega-bind { font-size: 12px; color: var(--ink-2); }
+  .vega-bind-name { font-weight: 500; margin-right: 6px; }
+  .vega-bind select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Успешность студентов OULAD</h1>
+    <p class="sub" id="period">Загружаю данные…</p>
+  </header>
+
+  <section class="kpi" id="kpi" aria-label="Ключевые метрики"></section>
+
+  <div class="grid">
+    <section class="card full" id="activity" aria-label="Активность когорт по неделям"></section>
+    <section class="card" id="outcome" aria-label="Итоги курса по потокам"></section>
+    <div style="display:grid; gap:16px; align-content:start; min-width:0">
+      <section class="card" id="feb_oct" aria-label="Февральский поток против октябрьского"></section>
+      <section class="card" id="on_time" aria-label="Сдача в срок, задания TMA"></section>
+    </div>
+    <section class="card full" id="submission" aria-label="Сдача заданий по порядку"></section>
+    <section class="card full" aria-label="Итоги по потокам таблицей">
+      <h2>Итоги по потокам таблицей</h2>
+      <p class="note">Те же данные, что на графиках, числами. Приступили — без отписавшихся до старта.</p>
+      <div id="table"></div>
+    </section>
+    <section class="card full" aria-label="Качество данных">
+      <h2>Качество данных</h2>
+      <p class="note">Что нашлось в наборе и как это учтено. Ошибки (дубли ключей, битые связи, форматы) останавливают сборку и сюда не попадают.</p>
+      <div id="dq"></div>
+    </section>
+  </div>
+
+  <footer>
+    <p><b>Приступили</b> — зарегистрированные на поток, кроме отписавшихся в день старта или раньше.
+       <b>Сдали курс</b> — итог Pass или Distinction. <b>Сдача задания</b> — доля сдавших среди тех, кто числился на курсе в день срока,
+       без перенесённых из прошлого потока результатов. <b>В срок</b> — в день срока или раньше, только TMA.
+       <b>Активен на неделе</b> — хотя бы один клик в VLE. Полные определения — <a href="https://github.com/mrovchinnikov95/oulad-learning-analytics/blob/main/docs/spec.md">docs/spec.md</a>.</p>
+    <p>Данные: Kuzilek J., Hlosta M., Zdrahal Z. Open University Learning Analytics dataset. Scientific Data 4, 170171 (2017),
+       <a href="https://doi.org/10.1038/sdata.2017.171">doi:10.1038/sdata.2017.171</a>; лицензия
+       <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Данные агрегированы, в репозиторий не копируются.
+       Код — <a href="https://github.com/mrovchinnikov95/oulad-learning-analytics">github.com/mrovchinnikov95/oulad-learning-analytics</a>.</p>
+  </footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/vega@6.4.0/build/vega.min.js"
+        integrity="sha384-VKdcJr3ZaBIJMbVcopTAI/JEuUkSY6qnwVu9iLuw0DnQ9gQ1JjsfZJhXFQAgNi43" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@6.5.0/build/vega-lite.min.js"
+        integrity="sha384-pV2l7nzmyxZh02knvUH7N8zvtyCYsYiGt+SsE/emG/dFiBI6G0YJZFZ2FzEX72P3" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@7.3.0/build/vega-embed.min.js"
+        integrity="sha384-Muy1QRxYFeNrA1zShc1KtN4OfipkR/61gt+HWqN57c1Zxu3Oe16TsilsruVVjfKL" crossorigin="anonymous"></script>
+<script>
+  // Страница только рисует: числа и подписи приходят из выгрузок витрин (dashboard/data/*.json).
+  const CHARTS = ["activity", "outcome", "feb_oct", "on_time", "submission"];
+  const RU_LOCALE = { decimal: ",", thousands: " ", grouping: [3], currency: ["", ""], percent: "%" };
+  const KPI = [
+    ["started", "приступили к 22 потокам"],
+    ["pass_rate", "приступивших сдали курс"],
+    ["withdrawn_rate", "приступивших отписались по ходу курса"],
+    ["submission_rate", "положенных заданий TMA и CMA сдано"],
+    ["tma_on_time_share", "сданных TMA пришли в срок"],
+    ["first_not_submitted_pass_rate", "сдали курс из тех, кто не сдал первое задание"],
+  ];
+
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim();
+  const TOKENS = ["surface", "ink", "ink-2", "muted", "line", "baseline", "pass", "fail", "withdrawn", "oct", "feb", "series1"];
+  const tokenValue = (name) => css(name === "ink2" ? "ink-2" : name);
+
+  // В спеках цвета записаны ролями ("token:pass"); значения берутся из CSS текущей темы.
+  function resolveTokens(node) {
+    if (typeof node === "string") return node.startsWith("token:") ? tokenValue(node.slice(6)) : node;
+    if (Array.isArray(node)) return node.map(resolveTokens);
+    if (node && typeof node === "object") return Object.fromEntries(Object.entries(node).map(([k, v]) => [k, resolveTokens(v)]));
+    return node;
+  }
+
+  function theme() {
+    const ink2 = css("ink-2"), muted = css("muted"), line = css("line"), baseline = css("baseline");
+    return {
+      background: css("surface"),
+      font: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+      padding: 4,
+      view: { stroke: null },
+      title: { anchor: "start", fontSize: 14, fontWeight: 600, color: css("ink"), subtitleColor: ink2, subtitleFontSize: 12, offset: 10 },
+      axis: { labelColor: ink2, titleColor: ink2, titleFontWeight: 500, titleFontSize: 11, labelFontSize: 11,
+              gridColor: line, domainColor: baseline, tickColor: baseline },
+      axisY: { domain: false, ticks: false },
+      legend: { labelColor: ink2, titleColor: ink2, labelFontSize: 12 },
+      header: { labelColor: css("ink"), titleColor: ink2 },
+      text: { color: ink2 },
+    };
+  }
+
+  const fmtInt = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
+  const fmtPct = new Intl.NumberFormat("ru-RU", { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+  async function getJson(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+    return res.json();
+  }
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function renderKpi(facts) {
+    const byCode = Object.fromEntries(facts.map((f) => [f.code, f]));
+    document.getElementById("kpi").innerHTML = KPI.map(([code, label]) => {
+      const f = byCode[code];
+      if (!f) throw new Error(`нет факта ${code}`);
+      return `<div class="tile"><div class="v">${esc(f.display)}</div><div class="k">${esc(label)}</div></div>`;
+    }).join("");
+  }
+
+  function renderTable(rows) {
+    const head = ["Поток", "Длина, дней", "Зарегистрировались", "Отписались до старта", "Приступили", "Сдали курс", "Провалили", "Отписались", "Сдача заданий", "TMA в срок"];
+    const body = rows.map((r) => `<tr><td>${esc(r.code_module + " " + r.code_presentation)}</td>`
+      + [r.length_days, r.registered, r.withdrew_before_start, r.started].map((v) => `<td class="num">${fmtInt.format(v)}</td>`).join("")
+      + [r.pass_rate, (r.started_fail / r.started), r.withdrawn_rate, r.submission_rate, r.tma_on_time_share]
+          .map((v) => `<td class="num">${fmtPct.format(v)}</td>`).join("") + "</tr>").join("");
+    document.getElementById("table").innerHTML =
+      `<table><thead><tr>${head.map((h, i) => `<th${i ? ' class="num"' : ""}>${h}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table>`;
+  }
+
+  function renderDataQuality(rows) {
+    const body = rows.map((r) => `<tr><td><code>${esc(r.code)}</code></td><td>${esc(r.description)}</td>`
+      + `<td class="num">${fmtInt.format(r.n)}</td><td>${esc(r.unit)}</td><td>${esc(r.handling)}</td></tr>`).join("");
+    document.getElementById("dq").innerHTML =
+      `<table><thead><tr><th>Код</th><th>Что нашлось</th><th class="num">Сколько</th><th>Чего</th><th>Как учтено</th></tr></thead><tbody>${body}</tbody></table>`;
+  }
+
+  async function main() {
+    const [facts, outcome, quality] = await Promise.all([
+      getJson("data/readme_facts.json"), getJson("data/presentation_outcome.json"), getJson("data/data_quality.json"),
+    ]);
+    const f = Object.fromEntries(facts.map((x) => [x.code, x.display]));
+    document.getElementById("period").textContent =
+      `Open University, ${f.modules} модулей, ${f.presentations} потока, 2013–2014 · ${f.registrations} регистраций, `
+      + `из них ${f.started} приступили · дни считаются от старта потока`;
+    renderKpi(facts);
+    renderTable(outcome);
+    renderDataQuality(quality);
+
+    const flows = outcome.map((r) => `${r.code_module} ${r.code_presentation}`);
+    const config = theme();
+    const results = await Promise.allSettled(CHARTS.map(async (id) => {
+      const spec = resolveTokens(await getJson(`specs/${id}.vl.json`));
+      if (id === "activity") spec.params[0].bind.options = ["все потоки", ...flows];
+      // "container" в Vega-Lite включает autosize по обеим осям и спорит с высотой по шагу строки,
+      // поэтому ширину берём у карточки один раз при отрисовке.
+      if (spec.width === "container") spec.width = Math.max(260, document.getElementById(id).clientWidth - 140);
+      return vegaEmbed(`#${id}`, spec, { actions: false, renderer: "svg", config, formatLocale: RU_LOCALE });
+    }));
+    const failed = [];
+    results.forEach((r, i) => {
+      if (r.status === "rejected") {
+        failed.push(CHARTS[i]);
+        console.error(`График ${CHARTS[i]} не отрисован:`, r.reason);
+        document.getElementById(CHARTS[i]).innerHTML = `<p class="error">График не отрисован: ${esc(r.reason)}</p>`;
+      }
+    });
+    // Сигнал для скрипта скриншота: всё нарисовано или что-то упало.
+    document.body.dataset.rendered = failed.length ? `error:${failed.join(",")}` : "ok";
+  }
+
+  main().catch((err) => {
+    console.error(err);
+    document.body.dataset.rendered = "error";
+    document.getElementById("period").innerHTML = `<span class="error">Ошибка загрузки: ${esc(err.message)}</span>`;
+  });
+</script>
+</body>
+</html>

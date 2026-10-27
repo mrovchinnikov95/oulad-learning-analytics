@@ -1,0 +1,11 @@
+# локальный одноразовый кластер PostgreSQL и его лог
+.pgdata/
+# временные файлы сборки и проверок
+.tmp/
+# данные OULAD не хранятся в репозитории: scripts/get_data.sh скачивает и сверяет их с data/SHA256SUMS
+data/download/
+data/raw/
+__pycache__/
+.DS_Store
+node_modules
+.venv/
