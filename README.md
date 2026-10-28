@@ -1,5 +1,7 @@
 # Успешность студентов Open University · Student success on Open University data
 
+[![build](https://github.com/mrovchinnikov95/oulad-learning-analytics/actions/workflows/build.yml/badge.svg)](https://github.com/mrovchinnikov95/oulad-learning-analytics/actions/workflows/build.yml) · [dashboard](https://mrovchinnikov95.github.io/oulad-learning-analytics/dashboard/)
+
 ## In English
 
 <!-- checked-en:start -->
