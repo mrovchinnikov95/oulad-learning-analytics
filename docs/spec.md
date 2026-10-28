@@ -2,7 +2,7 @@
 
 Здесь полные определения метрик проекта. SQL (`sql/`) и независимый пересчёт на Python (`checks/verify_independent.py`) написаны по этому документу независимо друг от друга. README и дашборд ссылаются на него и дают только короткие пояснения; при расхождении прав этот документ.
 
-Тип документа — справочник. Актуален на 28.10.2026. 27.10 по вопросам независимого пересчёта уточнены R5, R8, подписи и «модуль» в фактах CMA; 28.10 по рецензии уточнено обоснование R7. Определения не менялись.
+Тип документа — справочник. Актуален на 28.10.2026. 27.10 по вопросам независимого пересчёта уточнены R5, R8, подписи и «модуль» в фактах CMA; 28.10 по рецензии уточнено обоснование R7 и добавлены девять фактов `first_deadline_*`, `first_week_*`, `first_late_*` о первом задании так, как это видно по ходу курса. Остальные определения не менялись.
 
 ## Источник
 
@@ -114,7 +114,7 @@ Open University Learning Analytics Dataset (OULAD), 7 CSV-файлов в `data/
 | `vle_after_unreg` | строк `studentVle` с `date > unreg` своей регистрации |
 | `no_vle` | регистраций без единой строки `studentVle` |
 
-### `readme_facts.json` — факты для README и дашборда, 39 строк
+### `readme_facts.json` — факты для README и дашборда, 48 строк
 
 Порядок: `ord`. Колонки: `ord`, `code`, `value` (число или `null` у текстовых фактов), `display` (подпись). Сверяется `value`; у текстовых фактов — `display`.
 
@@ -151,6 +151,15 @@ Open University Learning Analytics Dataset (OULAD), 7 CSV-файлов в `data/
 | `cma_other_on_time_share` | сдачи CMA в срок / сдачи CMA в остальных модулях, где есть CMA |
 | `week12_active_pass`, `week12_active_fail` | `Σ active / Σ enrolled` недели 12 по всем потокам для группы `pass` / `fail` |
 | `week12_fail_on_course` | `Σ enrolled` недели 12 для группы `fail` |
+| `first_deadline_not_submitted` | среди пар `first_expected` — тех, у кого нет сдачи без переноса с `date_submitted ≤ D` (не сдал к дню срока) |
+| `first_deadline_not_submitted_share` | `first_deadline_not_submitted / first_expected` |
+| `first_deadline_not_submitted_pass_rate` | среди не сдавших к дню срока — доля с группой `pass` |
+| `first_week_not_submitted` | среди пар `first_expected` — тех, у кого нет сдачи без переноса с `date_submitted ≤ D + 7` (не сдал за неделю после срока) |
+| `first_week_not_submitted_share` | `first_week_not_submitted / first_expected` |
+| `first_week_not_submitted_pass_rate` | среди не сдавших за неделю после срока — доля с группой `pass` |
+| `first_week_submitted_pass_rate` | среди сдавших не позже `D + 7` — доля с группой `pass` |
+| `first_late_submitted` | пар `first_expected`, где сдача без переноса есть и `date_submitted > D` (сдал с опозданием) |
+| `first_late_submitted_pass_rate` | среди сдавших с опозданием — доля с группой `pass` |
 
 Подписи: проценты — `round(100 · value, 1)` с запятой и знаком `%`, половина округляется от нуля; разница долей — то же с « п.п.» через обычный пробел; целые до 10 000 — просто цифры, от 10 000 — с неразрывным пробелом между тысячами.
 

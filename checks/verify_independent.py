@@ -10,7 +10,7 @@
 Что сверяется:
   presentation_outcome.json, assessment_submission.json, cohort_week_activity.json — все колонки спеки;
   data_quality.json — n по каждому из 16 кодов и severity;
-  readme_facts.json — value всех 39 фактов; display текстовых фактов; display числовых фактов
+  readme_facts.json — value всех 48 фактов; display текстовых фактов; display числовых фактов
     против форматирования спеки от пересчитанного значения (проценты, п.п., целые);
   .tmp/export/student_presentation.csv — все 18 колонок как текст (t/f, пустая строка = пропуск);
   контрольные числа, которые спека называет в тексте (22 потока, 32 593 регистрации, 182 задания...).
@@ -116,6 +116,11 @@ RF_KINDS = {
     "first_submitted_pass_rate": "pct", "tma_on_time_share": "pct", "cma_low_modules": "int",
     "cma_low_submitted": "int", "cma_low_on_time": "int", "cma_other_on_time_share": "pct",
     "week12_active_pass": "pct", "week12_active_fail": "pct", "week12_fail_on_course": "int",
+    "first_deadline_not_submitted": "int", "first_deadline_not_submitted_share": "pct",
+    "first_deadline_not_submitted_pass_rate": "pct", "first_week_not_submitted": "int",
+    "first_week_not_submitted_share": "pct", "first_week_not_submitted_pass_rate": "pct",
+    "first_week_submitted_pass_rate": "pct", "first_late_submitted": "int",
+    "first_late_submitted_pass_rate": "pct",
 }
 
 SP_COLS = [
@@ -364,8 +369,12 @@ def assessment_pairs(data):
     banked["has_banked"] = True
     nb = sa_tc[sa_tc.is_banked == 0].copy()
     nb["nb_on_time"] = nb.date_submitted <= nb.D  # R7: date_submitted <= D
+    # факты first_week_*, first_late_*: сдача без переноса не позже D + 7 / позже D
+    nb["nb_week"] = nb.date_submitted <= nb.D + 7
+    nb["nb_late"] = nb.date_submitted > nb.D
     nb_flags = nb.groupby(["id_assessment", "id_student"], as_index=False).agg(
-        has_nb=("is_banked", "size"), nb_on_time=("nb_on_time", "any"))
+        has_nb=("is_banked", "size"), nb_on_time=("nb_on_time", "any"),
+        nb_week=("nb_week", "any"), nb_late=("nb_late", "any"))
     nb_flags["has_nb"] = nb_flags.has_nb > 0
 
     r = regs.reset_index().rename(columns={"index": "reg_id"})
@@ -375,7 +384,7 @@ def assessment_pairs(data):
         on=PKEY, how="inner")
     pairs = pairs.merge(banked, on=["id_assessment", "id_student"], how="left")
     pairs = pairs.merge(nb_flags, on=["id_assessment", "id_student"], how="left")
-    for c in ("has_banked", "has_nb", "nb_on_time"):
+    for c in ("has_banked", "has_nb", "nb_on_time", "nb_week", "nb_late"):
         pairs[c] = pairs[c].astype("boolean").fillna(False).astype(bool)
     D = pairs.D.to_numpy()
     pairs["expected"] = on_course(pairs.reg.to_numpy(), pairs.unreg.to_numpy(), D, D) & ~pairs.has_banked  # R5
@@ -565,6 +574,21 @@ def recompute_readme_facts(data, po_rows, po_exact, tc, pairs, cw_rows):
     f["first_not_submitted_pass_rate"] = ratio(int((not_sub.group == "pass").sum()), len(not_sub))
     f["first_not_submitted_withdrawn_rate"] = ratio(int((not_sub.final_result == "Withdrawn").sum()), len(not_sub))
     f["first_submitted_pass_rate"] = ratio(int((sub.group == "pass").sum()), len(sub))
+
+    # первое задание по ходу курса: среди тех же пар p1 — сдача без переноса (is_banked = 0) по дате
+    dl_not = p1[~p1.nb_on_time]  # нет сдачи без переноса с date_submitted <= D
+    wk_not = p1[~p1.nb_week]  # нет сдачи без переноса с date_submitted <= D + 7
+    wk_sub = p1[p1.nb_week]  # сдал не позже D + 7
+    late = p1[p1.nb_late]  # сдача без переноса есть и date_submitted > D
+    f["first_deadline_not_submitted"] = len(dl_not)
+    f["first_deadline_not_submitted_share"] = ratio(len(dl_not), len(p1))
+    f["first_deadline_not_submitted_pass_rate"] = ratio(int((dl_not.group == "pass").sum()), len(dl_not))
+    f["first_week_not_submitted"] = len(wk_not)
+    f["first_week_not_submitted_share"] = ratio(len(wk_not), len(p1))
+    f["first_week_not_submitted_pass_rate"] = ratio(int((wk_not.group == "pass").sum()), len(wk_not))
+    f["first_week_submitted_pass_rate"] = ratio(int((wk_sub.group == "pass").sum()), len(wk_sub))
+    f["first_late_submitted"] = len(late)
+    f["first_late_submitted_pass_rate"] = ratio(int((late.group == "pass").sum()), len(late))
     f["tma_on_time_share"] = ratio(S("tma_on_time"), S("tma_submitted"))
 
     by = cma_by_module(tc)
@@ -650,6 +674,7 @@ def recompute(data_dir):
     sp = recompute_student_presentation(data, pairs, v)
 
     asm, sa = data["asm"], data["sa"]
+    p1 = pairs[(pairs.seq == 1) & pairs.expected]
     exams = asm[asm.assessment_type == "Exam"]
     exam_rows = sa.merge(exams[["id_assessment", "code_module"]], on="id_assessment", how="inner")
     spec_facts = [
@@ -661,6 +686,7 @@ def recompute(data_dir):
         ("модули с результатами экзаменов (CCC, DDD)",
          " ".join(sorted(exam_rows.code_module.unique())), "CCC DDD"),
         ("строк cohort_week_activity (2 451)", len(cw_rows), 2451),
+        ("строк readme_facts (48)", len(rf), 48),
         ("sum_click всегда >= 1", v["min_click"] >= 1, True),
         ("тождество submitted + banked + submitted_not_expected = строк по заданию (нарушений)",
          int((tc.submitted + tc.banked + tc.submitted_not_expected != tc.sa_rows).sum()), 0),
@@ -669,6 +695,8 @@ def recompute(data_dir):
         f"строк studentVle: {v['rows_total']}, без своей регистрации: {v['unmapped']}",
         f"повторов пары «задание, студент» в studentAssessment: {dup_pairs}",
         f"пар R5 у не приступивших (R1) регистраций: {int((pairs.expected & pairs.wbs).sum())}",
+        "пар first_expected, где «есть сдача без переноса позже D» (first_late_submitted) "
+        f"≠ «сдал (R6), но не в срок (R7)»: {int((p1.nb_late != (p1.submitted & ~p1.on_time)).sum())}",
         f"строк studentVle с днём > length своего потока: {v['after_length']}",
         f"ничьих при округлении подписей до 0,1: {len(ties)} {ties if ties else ''}".rstrip(),
     ]
@@ -1033,6 +1061,7 @@ def corruptions():
         ("data_quality: две строки поменяны местами (seq едет со строкой)", lambda ex: swap(dq(ex), 0, 1)),
         ("readme_facts: +1e-9 к value pass_rate", lambda ex: rf_row(ex, "pass_rate").__setitem__("value", rf_row(ex, "pass_rate")["value"] + 1e-9)),
         ("readme_facts: +1 к value first_expected", lambda ex: rf_row(ex, "first_expected").__setitem__("value", rf_row(ex, "first_expected")["value"] + 1)),
+        ("readme_facts: +1 к value first_late_submitted", lambda ex: rf_row(ex, "first_late_submitted").__setitem__("value", rf_row(ex, "first_late_submitted")["value"] + 1)),
         ("readme_facts: текстовый display изменён", lambda ex: rf_row(ex, "pass_rate_min_presentation").__setitem__("display", "AAA 2013J")),
         ("readme_facts: процентная подпись изменена", lambda ex: rf_row(ex, "withdrawn_rate").__setitem__("display", "24,1%")),
         ("readme_facts: подпись целого без неразрывного пробела", lambda ex: rf_row(ex, "registrations").__setitem__("display", "32593")),

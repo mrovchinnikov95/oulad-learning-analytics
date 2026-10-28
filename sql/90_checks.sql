@@ -147,7 +147,7 @@ FROM (
               AND NOT rules.on_course(e.reg_day, e.unreg_day, 7 * rules.week_of(d.day), 7 * rules.week_of(d.day) + 6))
     UNION ALL
     SELECT 'фактов для README',
-           (SELECT count(*) FROM mart.readme_facts WHERE coalesce(value::text, display) IS NOT NULL AND display IS NOT NULL), 39
+           (SELECT count(*) FROM mart.readme_facts WHERE coalesce(value::text, display) IS NOT NULL AND display IS NOT NULL), 48
     UNION ALL
     SELECT 'строк качества данных', (SELECT count(*) FROM qa.data_quality), 16
 ) t;

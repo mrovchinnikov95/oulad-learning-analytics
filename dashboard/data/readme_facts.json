@@ -36,4 +36,13 @@
  {"ord":36,"code":"cma_other_on_time_share","value":0.94067508562763092530,"display":"94,1%"}, 
  {"ord":37,"code":"week12_active_pass","value":0.76943577743109724389,"display":"76,9%"}, 
  {"ord":38,"code":"week12_active_fail","value":0.39051405850610621982,"display":"39,1%"}, 
- {"ord":39,"code":"week12_fail_on_course","value":7042,"display":"7042"}]
+ {"ord":39,"code":"week12_fail_on_course","value":7042,"display":"7042"}, 
+ {"ord":40,"code":"first_deadline_not_submitted","value":9032,"display":"9032"}, 
+ {"ord":41,"code":"first_deadline_not_submitted_share","value":0.32970723516098415711,"display":"33,0%"}, 
+ {"ord":42,"code":"first_deadline_not_submitted_pass_rate","value":0.33414526129317980514,"display":"33,4%"}, 
+ {"ord":43,"code":"first_week_not_submitted","value":3490,"display":"3490"}, 
+ {"ord":44,"code":"first_week_not_submitted_share","value":0.12740016061911367453,"display":"12,7%"}, 
+ {"ord":45,"code":"first_week_not_submitted_pass_rate","value":0.09971346704871060172,"display":"10,0%"}, 
+ {"ord":46,"code":"first_week_submitted_pass_rate","value":0.62228078982597054886,"display":"62,2%"}, 
+ {"ord":47,"code":"first_late_submitted","value":6193,"display":"6193"}, 
+ {"ord":48,"code":"first_late_submitted_pass_rate","value":0.46649442919425157436,"display":"46,6%"}]

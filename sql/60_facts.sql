@@ -46,7 +46,7 @@ pairs AS (
 ),
 -- Первое задание потока (seq = 1): кто должен был его сдать и чем закончил курс.
 first AS (
-    SELECT x.submitted, sp.outcome_group, sp.final_result
+    SELECT x.submitted, x.submitted_day, x.deadline_day, sp.outcome_group, sp.final_result
     FROM mart.expected_submission x
     JOIN clean.assessment a ON a.id_assessment = x.id_assessment AND a.seq = 1
     JOIN mart.student_presentation sp
@@ -62,6 +62,23 @@ fs AS (
            count(*) FILTER (WHERE submitted AND outcome_group = 'pass')::numeric
                / count(*) FILTER (WHERE submitted) AS s_pass_rate
     FROM first
+),
+-- То же, но так, как это видно по ходу курса: «не сдал к дню срока» и «не сдал за неделю после срока».
+-- «Так и не сдал» (fs) известно только задним числом: в день срока опоздавших не отличить от несдавших.
+fw AS (
+    SELECT count(*) FILTER (WHERE NOT d0)                                    AS d0_not,
+           count(*) FILTER (WHERE NOT d0 AND outcome_group = 'pass')::numeric / count(*) FILTER (WHERE NOT d0) AS d0_not_pass,
+           count(*) FILTER (WHERE NOT d7)                                    AS d7_not,
+           count(*) FILTER (WHERE NOT d7 AND outcome_group = 'pass')::numeric / count(*) FILTER (WHERE NOT d7) AS d7_not_pass,
+           count(*) FILTER (WHERE d7 AND outcome_group = 'pass')::numeric / count(*) FILTER (WHERE d7)         AS d7_pass,
+           count(*) FILTER (WHERE late)                                      AS late,
+           count(*) FILTER (WHERE late AND outcome_group = 'pass')::numeric / count(*) FILTER (WHERE late)     AS late_pass,
+           count(*)                                                          AS expected
+    FROM (SELECT outcome_group,
+                 submitted AND submitted_day <= deadline_day     AS d0,
+                 submitted AND submitted_day <= deadline_day + 7 AS d7,
+                 submitted AND submitted_day > deadline_day      AS late
+          FROM first) t
 ),
 cma AS (
     SELECT code_module,
@@ -115,6 +132,15 @@ SELECT ord, code, value, display FROM (
     UNION ALL SELECT 37, 'week12_active_pass', active_share, 'pct' FROM w12 WHERE outcome_group = 'pass'
     UNION ALL SELECT 38, 'week12_active_fail', active_share, 'pct' FROM w12 WHERE outcome_group = 'fail'
     UNION ALL SELECT 39, 'week12_fail_on_course', enrolled, NULL FROM w12 WHERE outcome_group = 'fail'
+    UNION ALL SELECT 40, 'first_deadline_not_submitted', d0_not, NULL FROM fw
+    UNION ALL SELECT 41, 'first_deadline_not_submitted_share', d0_not::numeric / expected, 'pct' FROM fw
+    UNION ALL SELECT 42, 'first_deadline_not_submitted_pass_rate', d0_not_pass, 'pct' FROM fw
+    UNION ALL SELECT 43, 'first_week_not_submitted', d7_not, NULL FROM fw
+    UNION ALL SELECT 44, 'first_week_not_submitted_share', d7_not::numeric / expected, 'pct' FROM fw
+    UNION ALL SELECT 45, 'first_week_not_submitted_pass_rate', d7_not_pass, 'pct' FROM fw
+    UNION ALL SELECT 46, 'first_week_submitted_pass_rate', d7_pass, 'pct' FROM fw
+    UNION ALL SELECT 47, 'first_late_submitted', late, NULL FROM fw
+    UNION ALL SELECT 48, 'first_late_submitted_pass_rate', late_pass, 'pct' FROM fw
 ) f (ord, code, value, display_kind)
 CROSS JOIN LATERAL (SELECT CASE
     WHEN display_kind = 'pct' THEN mart.fmt_pct(value)

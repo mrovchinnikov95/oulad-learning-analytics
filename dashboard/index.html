@@ -52,6 +52,9 @@
   /* широкие таблицы на телефоне прокручиваются внутри своей обёртки, а не всей карточкой */
   .table-wrap { overflow-x: auto; }
   .sub { color: var(--ink-2); margin: 0 0 20px; }
+  #period { margin-bottom: 4px; }
+  .en { font-size: 13px; }
+  h2 .en { color: var(--muted); font-weight: 500; }
   .kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
   .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
   .tile .v { font-size: 26px; font-weight: 650; line-height: 1.15; }
@@ -83,45 +86,46 @@
   <header>
     <h1>Успешность студентов OULAD</h1>
     <p class="sub" id="period">Загружаю данные…</p>
+    <p class="sub en" lang="en">Student success on the Open University Learning Analytics Dataset: weekly cohort activity, course outcomes by presentation, on-time and assessment submission. Labels are in Russian; the README has an English summary.</p>
   </header>
 
   <section class="kpi" id="kpi" aria-label="Ключевые метрики"></section>
 
   <div class="grid">
     <section class="card full" aria-labelledby="h-activity">
-      <h2 id="h-activity">Активность когорт по неделям</h2>
+      <h2 id="h-activity">Активность когорт по неделям <span class="en" lang="en">· Weekly cohort activity</span></h2>
       <p class="note">Доля числящихся на курсе, кто хоть раз зашёл в VLE (сайт курса) за неделю. Последняя неделя потока неполная и не показана; «все потоки» — полные недели, которые есть у всех 22 потоков; точки, где в группе меньше 30 человек, скрыты.</p>
       <div class="chart" id="activity"></div>
     </section>
     <section class="card" aria-labelledby="h-outcome">
-      <h2 id="h-outcome">Итоги курса по потокам</h2>
+      <h2 id="h-outcome">Итоги курса по потокам <span class="en" lang="en">· Outcomes by presentation</span></h2>
       <p class="note">Доля приступивших; в подписи потока — доля сдавших курс.</p>
       <div class="chart" id="outcome"></div>
     </section>
     <div style="display:grid; gap:16px; align-content:start; min-width:0">
       <section class="card" aria-labelledby="h-feb-oct">
-        <h2 id="h-feb-oct">Февральский поток против октябрьского</h2>
+        <h2 id="h-feb-oct">Февральский поток против октябрьского <span class="en" lang="en">· February vs October</span></h2>
         <p class="note">Доля сдавших курс среди приступивших; пары одного модуля и одного года.</p>
         <div class="chart" id="feb_oct"></div>
       </section>
       <section class="card" aria-labelledby="h-on-time">
-        <h2 id="h-on-time">Сдача в срок, задания TMA</h2>
+        <h2 id="h-on-time">Сдача в срок, задания TMA <span class="en" lang="en">· On-time TMA submission</span></h2>
         <p class="note">TMA — задания с проверкой тьютором. Доля сданных в день срока или раньше среди сданных. CMA (тесты с автоматической проверкой) не входят: см. «Качество данных», код <code>cma_deadline</code>.</p>
         <div class="chart" id="on_time"></div>
       </section>
     </div>
     <section class="card full" aria-labelledby="h-submission">
-      <h2 id="h-submission">Сдача заданий TMA по ходу курса</h2>
+      <h2 id="h-submission">Сдача заданий TMA по ходу курса <span class="en" lang="en">· TMA submission by deadline day</span></h2>
       <p class="note">Доля сдавших среди тех, кто числился на курсе в день срока; по оси — день срока задания. CMA здесь не показаны: в части модулей у них общий срок в конце курса.</p>
       <div class="chart" id="submission"></div>
     </section>
     <section class="card full" aria-labelledby="h-table">
-      <h2 id="h-table">Итоги потоков числами</h2>
+      <h2 id="h-table">Итоги потоков числами <span class="en" lang="en">· Outcomes table</span></h2>
       <p class="note">Те же значения, что на графиках итогов, «февраль/октябрь» и сдачи в срок. Приступили — без отписавшихся до старта; отписались — итог Withdrawn среди приступивших; сдача заданий — TMA и CMA.</p>
       <div class="table-wrap" id="table"></div>
     </section>
     <section class="card full" aria-labelledby="h-dq">
-      <h2 id="h-dq">Качество данных</h2>
+      <h2 id="h-dq">Качество данных <span class="en" lang="en">· Data quality</span></h2>
       <p class="note">Что нашлось в наборе и как это учтено. Ошибки (дубли ключей, битые связи, форматы) останавливают сборку и сюда не попадают.</p>
       <div class="table-wrap" id="dq"></div>
     </section>
@@ -155,7 +159,7 @@
     ["withdrawn_rate", "приступивших отписались по ходу курса"],
     ["submission_rate", "положенных заданий TMA и CMA сдано"],
     ["tma_on_time_share", "сданных TMA пришли в срок"],
-    ["first_not_submitted_pass_rate", "сдали курс из тех, кто не сдал первое задание"],
+    ["first_week_not_submitted_pass_rate", "сдали курс из тех, кто не сдал первое задание за неделю после срока"],
   ];
 
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim();
